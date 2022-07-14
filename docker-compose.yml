@@ -1,0 +1,22 @@
+version: '2.4'
+services:
+
+  ros:
+    image: seal-ros2
+    build:
+        context: .
+        dockerfile: Dockerfile
+    network_mode: host
+    runtime: nvidia
+    ipc: host
+    volumes:
+      - .:/workspace/
+        #share your x11 socket and permissions to the container
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    privileged: true
+    environment:
+      - DISPLAY=$DISPLAY
+    devices:
+      - "/dev/video0:/dev/video0"
+    tty: true
+    command: bash

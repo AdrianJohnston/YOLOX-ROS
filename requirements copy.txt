@@ -1,0 +1,17 @@
+numpy
+torch>=1.10
+opencv_python
+loguru
+scikit-image
+tqdm
+torchvision
+Pillow
+thop
+ninja
+tabulate
+tensorboard
+onnxruntime
+yolox
+empy
+catkin_pkg
+lark
