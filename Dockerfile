@@ -23,6 +23,7 @@ RUN apt-get install -y ros-${ROS_DISTRO}-desktop python3-colcon-common-extension
 RUN apt-get update && apt-get install -q -y --no-install-recommends \
     git \
     python3-colcon-common-extensions \
+    python3-pip \
     lcov \
     # libglfw3-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -76,37 +77,38 @@ RUN apt-get update && apt-get install -y \
 
 
 ARG PYTHON_VERSION=3.8
-RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
-    chmod +x ~/miniconda.sh && \
-    ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh && \
-    /opt/conda/bin/conda install -y python=${PYTHON_VERSION} cmake conda-build pyyaml numpy ipython && \
-    # /opt/conda/bin/python -mpip install -r requirements.txt && \
-    /opt/conda/bin/conda clean -ya
+# RUN curl -fsSL -v -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
+#     chmod +x ~/miniconda.sh && \
+#     ~/miniconda.sh -b -p /opt/conda && \
+#     rm ~/miniconda.sh && \
+#     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} cmake conda-build pyyaml numpy ipython && \
+#     # /opt/conda/bin/python -mpip install -r requirements.txt && \
+#     /opt/conda/bin/conda clean -ya
 
-RUN echo 'export PATH=/opt/conda/bin:$PATH' >> ~/.bashrc && \
-    echo 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/lib' >> ~/.bashrc && \
-    /opt/conda/bin/conda init
+# RUN echo 'export PATH=/opt/conda/bin:$PATH' >> ~/.bashrc && \
+#     echo 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/lib' >> ~/.bashrc && \
+#     /opt/conda/bin/conda init
 
-ENV \
-    PATH="/opt/conda/bin:$PATH" \
-    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/conda/lib" \
-    MAKEFLAGS="-j1"
+# ENV \
+#     PATH="/opt/conda/bin:$PATH" \
+#     LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/conda/lib" \
+#     MAKEFLAGS="-j1"
 
-RUN pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
-
+RUN pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 COPY requirements.txt .
-RUN pip3 install -r requirements.txt
+RUN pip install -r requirements.txt
 
 RUN apt update && \
-    curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key  -o /usr/share/keyrings/ros-archive-keyring.gpg && \
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null && \
-    sed -i -e 's/ubuntu .* main/ubuntu focal main/g' /etc/apt/sources.list.d/ros2.list && \
-    apt update && \
+    #curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key  -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+    #echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null && \
+    #sed -i -e 's/ubuntu .* main/ubuntu focal main/g' /etc/apt/sources.list.d/ros2.list && \
+    #apt update && \
     #apt install -y ros-foxy-ros-base && \
     apt install -y python3-colcon-common-extensions && \
     apt install -y ros-foxy-v4l2-camera && \
-    apt install -y ros-foxy-cv-bridge &&\
+    apt install -y ros-foxy-cv-bridge && \
+    apt install -y ros-foxy-usb-cam && \
+    apt install -y ros-foxy-camera-calibration && \
     rm -rf /var/lib/apt/lists/*  &&\
     apt -y clean && \
     pip install -U pip && \
@@ -119,7 +121,18 @@ RUN apt update && \
 ADD . /workspace/
 WORKDIR /workspace
 
+RUN pip install cmake
 
-RUN colcon build --symlink-install --packages-select yolox_ros_py bboxes_ex_msgs
+# RUN colcon build --symlink-install --packages-select yolox_ros_py bboxes_ex_msgs
+
 RUN echo 'source /opt/ros/foxy/setup.bash' >> ~/.bashrc  
 RUN echo 'source /workspace/install/setup.bash' >> ~/.bashrc  
+
+# RUN colcon build --base-paths image_pipeline/ --packages-select camera_calibration
+# RUN colcon build --packages-select ros2_shared opencv_cam
+
+# RUN echo 'source /workspace/image_pipeline/install/local_setup.bash' >> ~/.bashrc  
+
+WORKDIR /workspace
+RUN mkdir -p /root/.ros/camera_info/
+RUN cp ./calibration/* /root/.ros/camera_info/
